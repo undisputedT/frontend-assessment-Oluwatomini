@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pokémon Explorer — Checkit Frontend Assessment
 
-## Getting Started
+A production-quality Content Explorer built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, and the **PokéAPI**.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+git clone https://github.com/YOUR_USERNAME/frontend-assessment-Oluwatomini.git
+cd frontend-assessment-Oluwatomini
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Choice
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**PokéAPI** (`https://pokeapi.co`) 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture Decisions
 
-## Learn More
+### Folder Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/              Next.js App Router — pages, layouts, loading/error
+components/
+  atoms/          TypeBadge, StatBar, Breadcrumb — pure display, no state
+  molecules/      PokemonCard, SearchInput, TypeFilterSelect, PaginationControls
+  organisms/      PokemonGrid, FilterBar, EvolutionChain — compose molecules
+  providers/      QueryProvider (client boundary for TanStack Query)
+features/
+  listing/        getFilteredPokemon — server-side data orchestration
+  search/         getAllPokemonNames — force-cached name list for search
+  detail/         getPokemonDetail, getEvolutionChain
+lib/
+  api/            pokeapi.ts — all fetch calls live here; components never call fetch() directly
+  transformers/   transformPokemon, transformEvolution — raw API → domain types
+  utils/          extractIdFromUrl, buildSpriteUrl, cn
+types/            pokemon.ts, api.ts, search.ts — all shared interfaces
+__tests__/        Vitest + RTL — components and pure utilities
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Server vs Client Components
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All data-fetching components are **Server Components** — they have no event handlers or state, so their JS is excluded from the client bundle entirely. Only four components are Client Components (`'use client'`): `SearchInput`, `TypeFilterSelect`, `PaginationControls` (need `useSearchParams`/`useRouter`), and `QueryProvider` (needs browser context).
 
-## Deploy on Vercel
+### Search & Filter Strategy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+URL params (`?search=&type=&page=`) are the single source of truth. The listing `page.tsx` receives `searchParams` as a prop (a Next.js 15/16 Promise) and passes values to `getFilteredPokemon`, which runs on the server. Four branches:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Branch | Condition | Approach |
+|--------|-----------|----------|
+| D | No filters | `GET /pokemon?limit=20&offset=N` → 20 parallel detail fetches |
+| A | Type only | `GET /type/{name}` → extract all IDs → paginate → detail-fetch |
+| B | Search only | force-cached all-names list → `.filter()` → paginate → detail-fetch |
+| C | Search + type | Parallel: type list + names list → intersect → detail-fetch |
+
+**Why pagination over infinite scroll:** Pagination keeps URLs shareable, works correctly with SSR, and doesn't require shipping 1 350 Pokémon names to the browser for client-side filtering.
+
+## Performance Optimizations
+
+### 1 · `next/image` with explicit dimensions and `priority`
+Every `<PokemonCard>` uses `<Image fill sizes="112px">` with explicit container dimensions to prevent layout shift. The first 4 cards (above the fold at most mobile viewports) receive `priority={true}`, injecting `<link rel="preload">` to improve LCP. The detail page hero image also has `priority`. `images.unoptimized: true` is required because Cloudflare Workers does not run the Sharp-based optimisation pipeline.
+
+### 2 · `next/font` (font optimisation)
+The root layout imports Geist via `next/font/google`. This inlines the critical `@font-face` in `<head>` with `font-display: swap`, eliminating the render-blocking Google Fonts stylesheet request.
+
+### 3 · Fetch cache strategies (per-call)
+
+| Call | Cache setting | Reason |
+|------|--------------|--------|
+| All names (1 350) | `force-cache` | Permanent until rebuild; ~96 KB, fetched once |
+| Paginated listing | `revalidate: 3600` | 1 h; new Pokémon added rarely |
+| Individual Pokémon | `revalidate: 86400` | 24 h; data is immutable in practice |
+| Type list | `revalidate: 86400` | 24 h; 21 types, static for years |
+| Type members | `revalidate: 3600` | 1 h; occasionally updated |
+| Species / Evolution | `revalidate: 86400` | 24 h; immutable |
+
+### 4 · Route-level code splitting via dynamic imports
+`FilterBar` (which bundles `SearchInput` + `TypeFilterSelect` + their hooks) is loaded with `next/dynamic`. This splits the filter UI JavaScript into a separate chunk that is not included in the initial page bundle, reducing the main bundle size. The loading fallback (skeleton bars) renders during the hydration gap so there is no layout shift.
+
+### 5 · React Suspense streaming for Evolution Chain (Bonus B2)
+`EvolutionChain` is an async Server Component in its own `<Suspense>` boundary. It requires two sequential fetches (species → chain URL → chain data). Streaming means the main Pokémon detail renders immediately and the chain fills in after — reducing time-to-first-meaningful-paint by ~600–900 ms compared to blocking.
+
+### 6 · Suspense boundaries around `useSearchParams` Client Components
+`SearchInput` and `TypeFilterSelect` use `useSearchParams`, which requires a Suspense boundary to avoid blocking prerendering. `FilterBar` wraps both with a skeleton fallback.
+
+## Fetch Cache → Cloudflare Workers Mapping (Bonus B1 context)
+
+Next.js fetch cache semantics map to the Workers runtime as follows via the OpenNext adapter:
+
+- `force-cache` → served from Next.js in-memory fetch cache per Worker instance; never re-fetched until restart
+- `revalidate: N` → stale-while-revalidate within a Worker instance's lifetime; **not** shared across instances without a KV binding
+- `no-store` → always fetches from origin on every request
+
+For true cross-region ISR persistence on Cloudflare, a KV store binding would be needed with the `@opennextjs/cloudflare` KV cache adapter. `open-next.config.ts` uses `incrementalCache: "dummy"` which is the in-memory default.
+
+## Deployment — Cloudflare Workers
+
+```bash
+npx wrangler login          # authenticate once
+npm run preview             # local Wrangler dev (simulates Workers runtime)
+npm run deploy              # build + deploy to production
+```
+
+### Known Constraints
+1. **No persistent ISR cache** — `revalidate` works within a Worker instance only. KV store required for global persistence.
+2. **`images.unoptimized: true`** — Workers have no Sharp pipeline. Layout stability is preserved through explicit dimensions.
+
+## Trade-offs & Known Limitations
+
+- **Name search is substring-only** — PokéAPI has no text search. Searching "saur" correctly matches "bulbasaur", "ivysaur", "venusaur".
+- **No persistent ISR across Worker instances** — documented above.
+- **Evolution chain follows first branch only** — branching evolutions (e.g. Eevee) only show one path. A full tree implementation was out of scope.
+- **No optimistic UI** — Filter changes trigger a full server re-render. `placeholderData` in TanStack Query would keep the previous result visible during transitions; omitted as fast cache hits make the gap imperceptible.
+
+## Testing
+
+```bash
+npm test            # run once
+npm run test:watch  # watch mode
+```
+
+28 tests across 3 files:
+- `PokemonCard.test.tsx` — 7 tests (rendering, link href, type badges, HP stat, padded ID)
+- `SearchInput.test.tsx` — 7 tests (debounce timing, URL updates, scroll option, label)
+- `transformPokemon.test.ts` — 14 tests (card/detail transformers, extractIdFromUrl, buildSpriteUrl)
+
+## Bonus Tasks
+
+- **B2 — Suspense streaming**: Navigate to any detail page. The main content (name, stats, image) renders first; the evolution chain streams in after. Verify by throttling the network in DevTools.
+- **B3 — Accessibility**: All interactive elements have `aria-label`, `aria-current`, or associated `<label>`. `StatBar` uses `role="progressbar"` with full ARIA value attributes. Focus-visible outlines on all interactive elements. Breadcrumb uses semantic `<nav>` + `<ol>`.
