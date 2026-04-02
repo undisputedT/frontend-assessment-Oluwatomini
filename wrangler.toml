@@ -1,0 +1,23 @@
+# wrangler.toml
+#
+# Cloudflare Wrangler configuration for deploying the app as a Worker.
+#
+# name: the Worker's name in the Cloudflare dashboard
+# compatibility_date: pins the Workers runtime version for reproducible deploys
+# compatibility_flags:
+#   nodejs_compat — enables Node.js built-ins (Buffer, crypto, etc.) inside the
+#   Worker runtime. Required by the OpenNext adapter and Next.js internals.
+# main: entry point produced by the OpenNext build step
+#
+# [assets]
+#   Static assets (JS chunks, CSS, images from /public) are served directly
+#   from Cloudflare's edge network via the Assets binding rather than going
+#   through the Worker function, which reduces Worker CPU time and cost.
+
+name = "pokemon-explorer"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+
+[assets]
+directory = ".open-next/assets"
