@@ -59,7 +59,7 @@ URL params (`?search=&type=&page=`) are the single source of truth. The listing 
 ## Performance Optimizations
 
 ### 1 · `next/image` with explicit dimensions and `priority`
-Every `<PokemonCard>` uses `<Image fill sizes="112px">` with explicit container dimensions to prevent layout shift. The first 4 cards (above the fold at most mobile viewports) receive `priority={true}`, injecting `<link rel="preload">` to improve LCP. The detail page hero image also has `priority`. `images.unoptimized: true` is required because Cloudflare Workers does not run the Sharp-based optimisation pipeline.
+Every `<PokemonCard>` uses `<Image fill sizes="112px">` with explicit container dimensions to prevent layout shift. The first 4 cards (above the fold at most mobile viewports) receive `priority={true}`, injecting `<link rel="preload">` to improve LCP. The detail page hero image also has `priority`.
 
 ### 2 · `next/font` (font optimisation)
 The root layout imports Geist via `next/font/google`. This inlines the critical `@font-face` in `<head>` with `font-display: swap`, eliminating the render-blocking Google Fonts stylesheet request.
@@ -84,32 +84,17 @@ The root layout imports Geist via `next/font/google`. This inlines the critical 
 ### 6 · Suspense boundaries around `useSearchParams` Client Components
 `SearchInput` and `TypeFilterSelect` use `useSearchParams`, which requires a Suspense boundary to avoid blocking prerendering. `FilterBar` wraps both with a skeleton fallback.
 
-## Fetch Cache → Cloudflare Workers Mapping (Bonus B1 context)
-
-Next.js fetch cache semantics map to the Workers runtime as follows via the OpenNext adapter:
-
-- `force-cache` → served from Next.js in-memory fetch cache per Worker instance; never re-fetched until restart
-- `revalidate: N` → stale-while-revalidate within a Worker instance's lifetime; **not** shared across instances without a KV binding
-- `no-store` → always fetches from origin on every request
-
-For true cross-region ISR persistence on Cloudflare, a KV store binding would be needed with the `@opennextjs/cloudflare` KV cache adapter. `open-next.config.ts` uses `incrementalCache: "dummy"` which is the in-memory default.
-
-## Deployment — Cloudflare Workers
+## Deployment — Vercel
 
 ```bash
-npx wrangler login          # authenticate once
-npm run preview             # local Wrangler dev (simulates Workers runtime)
-npm run deploy              # build + deploy to production
+npm run build   # verify the build passes locally first
 ```
 
-### Known Constraints
-1. **No persistent ISR cache** — `revalidate` works within a Worker instance only. KV store required for global persistence.
-2. **`images.unoptimized: true`** — Workers have no Sharp pipeline. Layout stability is preserved through explicit dimensions.
+Then push to GitHub and import the repository on [vercel.com](https://vercel.com). Vercel auto-detects Next.js — no extra configuration needed. Every push to `main` triggers a new production deployment.
 
 ## Trade-offs & Known Limitations
 
 - **Name search is substring-only** — PokéAPI has no text search. Searching "saur" correctly matches "bulbasaur", "ivysaur", "venusaur".
-- **No persistent ISR across Worker instances** — documented above.
 - **Evolution chain follows first branch only** — branching evolutions (e.g. Eevee) only show one path. A full tree implementation was out of scope.
 - **No optimistic UI** — Filter changes trigger a full server re-render. `placeholderData` in TanStack Query would keep the previous result visible during transitions; omitted as fast cache hits make the gap imperceptible.
 

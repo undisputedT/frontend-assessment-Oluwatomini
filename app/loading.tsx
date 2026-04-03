@@ -28,9 +28,9 @@ export default function Loading() {
         <div className="h-11 flex-1 animate-pulse rounded-xl bg-gray-200" />
         <div className="h-11 w-44 animate-pulse rounded-xl bg-gray-200" />
       </div>
-      {/* 20 card skeletons to match the page size */}
+      {/* 10 card skeletons to match the default page size */}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {Array.from({ length: 10 }).map((_, i) => (
           <li key={i}>
             <CardSkeleton />
           </li>

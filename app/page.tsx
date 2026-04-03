@@ -13,6 +13,7 @@ import { getFilteredPokemon } from "@/features/listing/getFilteredPokemon";
 import { fetchTypes } from "@/lib/api/pokeapi";
 import { PokemonGrid } from "@/components/organisms/PokemonGrid";
 import { PaginationControls } from "@/components/molecules/PaginationControls";
+import { DEFAULT_PAGE_SIZE, LIMIT_OPTIONS } from "@/lib/api/constants";
 
 // Load FilterBar separately so it doesn't slow down the initial page render
 const FilterBar = dynamic(
@@ -41,10 +42,14 @@ export default async function HomePage({ searchParams }: PageProps) {
     typeof params.page === "string"
       ? Math.max(1, parseInt(params.page, 10) || 1)
       : 1;
+  const rawLimit =
+    typeof params.limit === "string" ? parseInt(params.limit, 10) : DEFAULT_PAGE_SIZE;
+  // Only allow the values available in the dropdown — reject anything else
+  const limit = LIMIT_OPTIONS.includes(rawLimit) ? rawLimit : DEFAULT_PAGE_SIZE;
 
   // Fetch Pokémon and the type list at the same time — they don't depend on each other
   const [{ pokemon, total }, typesData] = await Promise.all([
-    getFilteredPokemon({ search, type, page }),
+    getFilteredPokemon({ search, type, page, limit }),
     fetchTypes(),
   ]);
 

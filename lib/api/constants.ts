@@ -5,9 +5,11 @@
 /** The base URL for all PokéAPI calls. */
 export const POKEAPI_BASE = "https://pokeapi.co/api/v2";
 
-// How many Pokémon to show per page.
-// 20 is a good balance — enough to fill the grid without fetching too many at once.
-export const PAGE_SIZE = 20;
+// Default number of Pokémon shown per page
+export const DEFAULT_PAGE_SIZE = 10;
+
+// The options available in the "Show: N" dropdown
+export const LIMIT_OPTIONS = [10, 20, 50, 100];
 
 // How long (in seconds) Next.js will keep a cached response before checking for fresh data.
 // These use Next.js's stale-while-revalidate caching — the page serves instantly from cache,

@@ -16,7 +16,6 @@ import { transformPokemonCard } from "@/lib/transformers/transformPokemon";
 import { extractIdFromUrl } from "@/lib/utils/extractIdFromUrl";
 import { FilterState } from "@/types/search";
 import { PokemonCard, PokemonPageResult } from "@/types/pokemon";
-import { PAGE_SIZE } from "@/lib/api/constants";
 
 // Fetches multiple Pokémon at once by their IDs and transforms each one into a card.
 // All fetches run in parallel — .then() lets us transform each result right away
@@ -28,14 +27,14 @@ async function fetchDetailBatch(ids: number[]): Promise<PokemonCard[]> {
 export async function getFilteredPokemon(
   filter: FilterState
 ): Promise<PokemonPageResult> {
-  const { search, type, page } = filter;
-  const offset = (page - 1) * PAGE_SIZE;
+  const { search, type, page, limit } = filter;
+  const offset = (page - 1) * limit;
   const hasSearch = search.trim().length > 0;
   const hasType = type.trim().length > 0;
 
   // No filters — the API handles pagination natively, so we just ask for the right page
   if (!hasSearch && !hasType) {
-    const list = await fetchPokemonList(PAGE_SIZE, offset);
+    const list = await fetchPokemonList(limit, offset);
     const ids = list.results.map((r) => extractIdFromUrl(r.url));
     const pokemon = await fetchDetailBatch(ids);
     return { pokemon, total: list.count };
@@ -71,7 +70,7 @@ export async function getFilteredPokemon(
   }
 
   const total = candidateIds.length;
-  const pageSlice = candidateIds.slice(offset, offset + PAGE_SIZE);
+  const pageSlice = candidateIds.slice(offset, offset + limit);
   const pokemon = await fetchDetailBatch(pageSlice);
 
   return { pokemon, total };
