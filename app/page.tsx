@@ -46,6 +46,7 @@ export default async function HomePage({ searchParams }: PageProps) {
     typeof params.limit === "string" ? parseInt(params.limit, 10) : DEFAULT_PAGE_SIZE;
   // Only allow the values available in the dropdown — reject anything else
   const limit = LIMIT_OPTIONS.includes(rawLimit) ? rawLimit : DEFAULT_PAGE_SIZE;
+  const view = params.view === "list" ? "list" : "grid";
 
   // Fetch Pokémon and the type list at the same time — they don't depend on each other
   const [{ pokemon, total }, typesData] = await Promise.all([
@@ -78,7 +79,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         </Suspense>
       </div>
 
-      <PokemonListView pokemon={pokemon} />
+      <PokemonListView pokemon={pokemon} view={view} />
 
       {/* PaginationControls reads from the URL, so it needs a Suspense boundary */}
       <Suspense fallback={null}>
