@@ -74,7 +74,7 @@ export function PaginationControls({ total }: PaginationControlsProps) {
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-between">
 
       {/* Left side: showing range + per-page selector */}
       <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export function PaginationControls({ total }: PaginationControlsProps) {
                 onClick={() => navigatePage(p as number)}
                 aria-label={`Page ${p}`}
                 aria-current={p === currentPage ? "page" : undefined}
-                className={`min-w-[2rem] rounded-lg border px-2.5 py-1.5 text-sm font-medium transition ${
+                className={`min-w-8 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition ${
                   p === currentPage
                     ? "border-blue-500 bg-blue-50 text-blue-600"
                     : "border-gray-300 text-gray-700 hover:bg-gray-50"

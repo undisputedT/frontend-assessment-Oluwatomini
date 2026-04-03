@@ -11,7 +11,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { getFilteredPokemon } from "@/features/listing/getFilteredPokemon";
 import { fetchTypes } from "@/lib/api/pokeapi";
-import { PokemonGrid } from "@/components/organisms/PokemonGrid";
+import { PokemonListView } from "@/components/organisms/PokemonListView";
 import { PaginationControls } from "@/components/molecules/PaginationControls";
 import { DEFAULT_PAGE_SIZE, LIMIT_OPTIONS } from "@/lib/api/constants";
 
@@ -78,7 +78,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         </Suspense>
       </div>
 
-      <PokemonGrid pokemon={pokemon} />
+      <PokemonListView pokemon={pokemon} />
 
       {/* PaginationControls reads from the URL, so it needs a Suspense boundary */}
       <Suspense fallback={null}>
