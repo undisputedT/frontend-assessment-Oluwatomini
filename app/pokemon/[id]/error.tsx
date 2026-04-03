@@ -1,19 +1,9 @@
-/**
- * app/pokemon/[id]/error.tsx
- *
- * Error boundary for the Pokémon detail page. Catches unhandled errors thrown
- * during the detail page's server render (e.g. API timeout, unexpected shape).
- *
- * Provides two recovery options:
- *   1. "Try again" — calls Next.js's reset() to retry the failed render
- *   2. "Back to listing" — navigates to the home page if the Pokémon is
- *      genuinely unavailable and retrying would not help
- *
- * Must be a Client Component ('use client') so it can receive the `reset`
- * callback and attach it to the button's onClick handler.
- */
-
 "use client";
+
+// app/pokemon/[id]/error.tsx
+// Shown when the detail page throws an error.
+// Gives the user two options: try again, or go back to the listing.
+// Must be a client component to use the reset() callback.
 
 import { useEffect } from "react";
 import Link from "next/link";
@@ -23,12 +13,7 @@ interface ErrorProps {
   reset: () => void;
 }
 
-/**
- * Renders a user-friendly error state for the detail page.
- * Logs the error for observability and offers two recovery paths.
- */
 export default function Error({ error, reset }: ErrorProps) {
-  // Log to console so the error surfaces in server logs / error monitoring
   useEffect(() => {
     console.error(error);
   }, [error]);

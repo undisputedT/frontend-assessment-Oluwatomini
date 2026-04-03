@@ -1,53 +1,31 @@
-/**
- * lib/transformers/transformPokemon.ts
- *
- * Transforms raw PokéAPI Pokémon responses into the domain types used
- * by the UI. This is the only place in the codebase that knows about
- * the raw API shape — everything downstream works with PokemonCard
- * or PokemonDetail.
- *
- * Keeping transformation logic here means:
- *   - Components stay clean (no inline data wrangling in JSX)
- *   - Transformations are easy to unit test with plain objects
- *   - API changes require updates in one file, not across the whole app
- */
+// lib/transformers/transformPokemon.ts
+// Converts raw API responses into the clean shapes our UI actually uses.
+// This is the only file that knows about the messy raw API format.
+// Everything else in the app works with the clean versions.
 
 import { PokeAPIPokemon } from "@/types/api";
 import { PokemonCard, PokemonDetail, PokemonType } from "@/types/pokemon";
 import { buildSpriteUrl } from "@/lib/utils/buildSpriteUrl";
 
-/**
- * A module-level Set of all valid PokemonType values.
- * Created once when the module loads (not on every function call).
- * Used to safely cast API type name strings — the API occasionally includes
- * "shadow" or "unknown" types that have no real Pokémon or colour mapping.
- */
+// All 18 valid types in a Set so we can check membership in O(1).
+// Created once when the module loads, not on every function call.
+// The API occasionally returns "shadow" or "unknown" types — we treat those as "normal"
+// so they get a neutral colour badge instead of crashing.
 const VALID_TYPES = new Set<string>([
   "normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison",
   "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy",
 ]);
 
-/**
- * Converts a raw API type name string to a typed PokemonType.
- * Falls back to "normal" for any unrecognised value — this is a defensive
- * measure rather than a silent failure; "normal" will render a neutral badge
- * rather than crashing or leaving the type blank.
- */
+// Returns the type string if it's a known battle type, or falls back to "normal".
 function toSafeType(name: string): PokemonType {
   return VALID_TYPES.has(name) ? (name as PokemonType) : "normal";
 }
 
-/**
- * Transforms a raw Pokémon API response into a PokemonCard.
- * PokemonCard is the lean shape used by the listing grid — it contains
- * only what's needed to render a card without over-fetching.
- *
- * Image URL: prefers the official-artwork PNG (higher quality, transparent
- * background) and falls back to buildSpriteUrl if the artwork field is null.
- */
+// Converts a raw Pokémon response into the lean shape used by listing cards.
+// We use the official-artwork image when available (better quality),
+// and fall back to a constructed sprite URL if the field is null.
 export function transformPokemonCard(raw: PokeAPIPokemon): PokemonCard {
-  // The HP stat is always present but findIndex is safer than hardcoding [0]
-  // since the API doesn't guarantee stat order.
+  // Find HP by name rather than hardcoding [0] — the API doesn't guarantee stat order
   const hpStat = raw.stats.find((s) => s.stat.name === "hp");
 
   return {
@@ -61,20 +39,14 @@ export function transformPokemonCard(raw: PokeAPIPokemon): PokemonCard {
       name: "hp",
       value: hpStat?.base_stat ?? 0,
     },
-    height: raw.height, // stored in decimetres — UI divides by 10 for metres
-    weight: raw.weight, // stored in hectograms — UI divides by 10 for kilograms
+    height: raw.height, // in decimetres — the detail page divides by 10 for metres
+    weight: raw.weight, // in hectograms — the detail page divides by 10 for kilograms
   };
 }
 
-/**
- * Transforms a raw Pokémon API response into the full PokemonDetail shape.
- * Builds the card first (reusing transformPokemonCard) then spreads in
- * the extra fields needed only on the detail page.
- *
- * Moves are capped at 10 — the full list can exceed 100 entries and the
- * detail page only shows a sample. Showing all would require a scrollable
- * list and clutters the UI without adding much value.
- */
+// Converts a raw Pokémon response into the full shape used by the detail page.
+// Builds the card first (reusing the function above), then adds the extra fields.
+// Moves are capped at 10 — the full list can be 100+ and we only show a sample.
 export function transformPokemonDetail(raw: PokeAPIPokemon): PokemonDetail {
   const card = transformPokemonCard(raw);
   return {

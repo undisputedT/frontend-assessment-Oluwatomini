@@ -1,31 +1,13 @@
-/**
- * __tests__/components/PokemonCard.test.tsx
- *
- * Unit tests for the PokemonCard component.
- *
- * What we test:
- *   - Rendering the Pokémon name as a heading element
- *   - Image rendering with the correct src attribute
- *   - Type badges — one per type, correct labels
- *   - HP stat display
- *   - The card being a link to the correct detail route
- *   - The padded Pokémon ID (e.g. #001)
- *
- * What we don't test:
- *   - Tailwind class names — these are cosmetic and change with design updates
- *   - Hover animations — not testable in jsdom
- *   - FallbackImage error path — covered separately if needed
- *
- * next/image is mocked globally in vitest.setup.ts to avoid the Sharp
- * dependency, so image assertions check the rendered <img> element.
- */
+// __tests__/components/PokemonCard.test.tsx
+// Tests for the PokemonCard component.
+// Checks that the card renders the right content and links to the right page.
 
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PokemonCard } from "@/components/molecules/PokemonCard";
 import { PokemonCard as PokemonCardType } from "@/types/pokemon";
 
-/** Fixture representing Bulbasaur — a dual-type Pokémon for badge tests */
+// Bulbasaur — dual-type so we can test both type badges
 const mockPokemon: PokemonCardType = {
   id: 1,
   name: "bulbasaur",
@@ -57,7 +39,6 @@ describe("PokemonCard", () => {
 
   it("renders exactly two type badges for a dual-type Pokémon", () => {
     render(<PokemonCard pokemon={mockPokemon} />);
-    // Type badges are spans with capitalised type names
     const grass = screen.getByText("grass");
     const poison = screen.getByText("poison");
     expect(grass.tagName).toBe("SPAN");

@@ -1,47 +1,31 @@
-/**
- * components/atoms/StatBar.tsx
- *
- * Renders a labelled, accessible progress bar for a single Pokémon base stat.
- * Used in the detail page stats section to visualise all six base stats.
- *
- * Accessibility: the outer track div carries role="progressbar" with the full
- * set of ARIA attributes (aria-valuenow, aria-valuemin, aria-valuemax,
- * aria-label) so screen readers can announce "hp: 45" rather than ignoring
- * what looks like a decorative bar.
- */
+// components/atoms/StatBar.tsx
+// A horizontal bar that shows a base stat (like HP or Attack) as a filled track.
+// Used on the detail page to visualise all six stats at a glance.
+// The bar is marked as a progressbar so screen readers can announce the value.
 
 import { cn } from "@/lib/utils/cn";
 
 interface StatBarProps {
   label: string;
   value: number;
-  /** Maximum possible value — defaults to 255, the highest base stat in the games */
-  max?: number;
+  max?: number;   // max possible value — defaults to 255 (the highest base stat in the games)
   className?: string;
 }
 
-/**
- * Renders a horizontal stat bar with a numeric label on the left and the
- * filled portion scaled to (value / max) * 100%.
- *
- * The percentage is clamped to 100 with Math.min so that any hypothetical
- * stat above the expected maximum does not overflow the track element.
- */
 export function StatBar({ label, value, max = 255, className }: StatBarProps) {
-  // Clamp to [0, 100] so the bar never overflows its container
+  // Clamp to 100% so the bar never overflows if a value exceeds the expected max
   const pct = Math.min(100, Math.round((value / max) * 100));
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {/* Stat name — right-aligned so all bars start at the same horizontal position */}
+      {/* Stat name — right-aligned so all bars start at the same position */}
       <span className="w-20 shrink-0 text-right text-xs font-medium capitalize text-gray-500">
         {label}
       </span>
-      {/* Numeric value — fixed-width column keeps bars aligned */}
       <span className="w-8 shrink-0 text-right text-xs font-bold text-gray-800">
         {value}
       </span>
-      {/* Track — role="progressbar" makes this meaningful to assistive technology */}
+      {/* role="progressbar" with aria attributes makes this readable by screen readers */}
       <div
         className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200"
         role="progressbar"

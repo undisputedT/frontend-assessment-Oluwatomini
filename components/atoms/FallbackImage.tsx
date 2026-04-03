@@ -1,16 +1,10 @@
-/**
- * components/atoms/FallbackImage.tsx
- *
- * A thin wrapper around next/image that handles broken image URLs gracefully.
- * When the underlying <Image> fires an onError event (network failure, 404,
- * invalid URL, etc.), the component switches to a neutral placeholder instead
- * of showing the browser's default broken-image icon.
- *
- * Must be a Client Component ('use client') because it uses useState to track
- * the error state — Server Components cannot hold interactive state.
- */
-
 "use client";
+
+// components/atoms/FallbackImage.tsx
+// A wrapper around next/image that handles broken image URLs gracefully.
+// If the image fails to load (404, network error, etc.), it shows a
+// placeholder instead of a broken image icon.
+// Needs to be a client component because it uses useState to track the error.
 
 import Image from "next/image";
 import { useState } from "react";
@@ -18,24 +12,14 @@ import { useState } from "react";
 interface FallbackImageProps {
   src: string;
   alt: string;
-  /** Pass true to use CSS-based fill layout (parent must be position:relative) */
-  fill?: boolean;
+  fill?: boolean;    // uses CSS fill layout — parent must have position: relative
   sizes?: string;
-  /** Mark as priority to skip lazy-loading for LCP images */
   priority?: boolean;
   className?: string;
   width?: number;
   height?: number;
 }
 
-/**
- * Wraps next/image with a graceful onError fallback.
- * When the image URL fails to load (network error, 404, etc.),
- * it renders a neutral placeholder instead of a broken image icon.
- *
- * The placeholder uses role="img" and an accessible aria-label so
- * screen readers still announce that an image was expected here.
- */
 export function FallbackImage({ src, alt, fill, sizes, priority, className, width, height }: FallbackImageProps) {
   const [failed, setFailed] = useState(false);
 

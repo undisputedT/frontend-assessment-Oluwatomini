@@ -1,33 +1,20 @@
-/**
- * components/atoms/Breadcrumb.tsx
- *
- * Renders a semantic breadcrumb trail using the HTML landmark pattern
- * recommended by WAI-ARIA: <nav aria-label="Breadcrumb"> wrapping an <ol>
- * of <li> items. This gives screen reader users a clear navigation landmark
- * and communicates the page hierarchy.
- *
- * The last item receives aria-current="page" to identify the current location.
- * Separator slashes are marked aria-hidden so assistive technology does not
- * announce them as content.
- */
+// components/atoms/Breadcrumb.tsx
+// Shows where you are in the app — like "All Pokémon / Bulbasaur".
+// Uses a proper <nav> and <ol> so screen readers announce it as navigation
+// and announce the item count.
+// The last item is marked aria-current="page" so screen readers know it's the current page.
 
 import Link from "next/link";
 
 interface BreadcrumbItem {
   label: string;
-  /** When provided (and not the last item), the label renders as a link */
-  href?: string;
+  href?: string; // when provided (and not the last item), renders as a link
 }
 
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
 }
 
-/**
- * Renders an ordered list of breadcrumb items.
- * Items with an href (except the last) render as Next.js links.
- * The final item renders as a plain span with aria-current="page".
- */
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb">
@@ -36,7 +23,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
           const isLast = i === items.length - 1;
           return (
             <li key={i} className="flex items-center gap-1">
-              {/* Separator — hidden from assistive technology */}
+              {/* Slash separator — hidden from screen readers since it's just decoration */}
               {i > 0 && <span aria-hidden="true">/</span>}
               {item.href && !isLast ? (
                 <Link

@@ -1,19 +1,9 @@
-/**
- * app/not-found.tsx
- *
- * Next.js global 404 page. Rendered when notFound() is called anywhere in
- * the app, or when a URL matches no route. Also handles non-numeric Pokémon
- * ID segments (e.g. /pokemon/abc) since the detail page calls notFound() on
- * invalid IDs.
- *
- * A direct "Back to listing" link is provided rather than relying on the
- * browser back button, which may not be available in all contexts (e.g.
- * deep-linked URLs opened in a new tab).
- */
+// app/not-found.tsx
+// Shown when a URL doesn't match any route, or when notFound() is called
+// (e.g. a Pokémon ID that doesn't exist).
 
 import Link from "next/link";
 
-/** Renders a friendly 404 message with a direct link back to the listing. */
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">

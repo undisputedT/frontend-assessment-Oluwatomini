@@ -1,24 +1,14 @@
-/**
- * components/atoms/TypeBadge.tsx
- *
- * Renders a pill-shaped badge for a single Pokémon type (e.g. "fire", "water").
- * Each type has its own canonical colour drawn from the official Pokémon games.
- *
- * The colour map lives at the module level so it is created once on import,
- * not on every render. All 18 battle types are covered; the transformer layer
- * normalises any unrecognised API types to "normal" before they reach here,
- * so the Record is always exhaustive.
- */
+// components/atoms/TypeBadge.tsx
+// A small coloured pill that shows a Pokémon type like "fire" or "water".
+// Each type has its own colour based on the official Pokémon games.
 
 import { PokemonType } from "@/types/pokemon";
 import { cn } from "@/lib/utils/cn";
 
-/**
- * Maps every valid PokemonType to a Tailwind background + text colour pair.
- * Arbitrary hex values (e.g. bg-[#F08030]) are used because Tailwind's built-in
- * palette does not include the exact Pokémon brand colours.
- * Light-background types (electric, ice, ground, steel) use dark text for contrast.
- */
+// Colour map for every type.
+// We use arbitrary hex values (e.g. bg-[#F08030]) because Tailwind's built-in
+// colour palette doesn't include the exact Pokémon brand colours.
+// Types with a light background use dark text so the label stays readable.
 const TYPE_COLORS: Record<PokemonType, string> = {
   normal:   "bg-[#A8A878] text-white",
   fire:     "bg-[#F08030] text-white",
@@ -42,15 +32,9 @@ const TYPE_COLORS: Record<PokemonType, string> = {
 
 interface TypeBadgeProps {
   type: PokemonType;
-  /** Optional extra Tailwind classes — used on the detail page to increase badge size */
-  className?: string;
+  className?: string; // lets callers override size — e.g. larger badges on the detail page
 }
 
-/**
- * Renders a coloured pill badge for the given Pokémon type.
- * Accepts an optional className to allow callers to override size (e.g. the
- * detail page uses larger padding than the card grid).
- */
 export function TypeBadge({ type, className }: TypeBadgeProps) {
   return (
     <span

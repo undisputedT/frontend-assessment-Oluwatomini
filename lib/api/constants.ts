@@ -1,36 +1,23 @@
-/**
- * lib/api/constants.ts
- *
- * Shared configuration values for the PokéAPI integration.
- * Centralising these here means cache durations and pagination size
- * can be changed in one place rather than scattered across fetch calls.
- */
+// lib/api/constants.ts
+// Shared values used across API calls.
+// Putting them here means we change them in one place, not scattered everywhere.
 
-/** Base URL for all PokéAPI v2 endpoints. */
+/** The base URL for all PokéAPI calls. */
 export const POKEAPI_BASE = "https://pokeapi.co/api/v2";
 
-/**
- * Number of Pokémon to fetch and display per page.
- * 20 balances visual density with the parallel fetch cost —
- * each page triggers 20 concurrent detail requests.
- */
+// How many Pokémon to show per page.
+// 20 is a good balance — enough to fill the grid without fetching too many at once.
 export const PAGE_SIZE = 20;
 
-/**
- * Cache revalidation durations (in seconds).
- *
- * Next.js uses these to decide how long to serve a cached fetch response
- * before revalidating it in the background (stale-while-revalidate pattern).
- *
- * On Cloudflare Workers, these act as in-memory hints per Worker instance
- * rather than globally shared cache, unless a KV store is configured.
- */
+// How long (in seconds) Next.js will keep a cached response before checking for fresh data.
+// These use Next.js's stale-while-revalidate caching — the page serves instantly from cache,
+// then quietly refreshes in the background if the time has passed.
 
-/** 24 hours — used for individual Pokémon and static reference data that rarely changes. */
+/** 24 hours — for individual Pokémon data, which almost never changes. */
 export const REVALIDATE_DETAIL = 86400;
 
-/** 1 hour — used for paginated listings and type membership lists. */
+/** 1 hour — for listing and type data, which can change when new Pokémon are added. */
 export const REVALIDATE_LISTING = 3600;
 
-/** 24 hours — used for the type list (21 types, static across game generations). */
+/** 24 hours — for the type list, which is basically static. */
 export const REVALIDATE_TYPE = 86400;

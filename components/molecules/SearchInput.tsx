@@ -1,46 +1,24 @@
-/**
- * components/molecules/SearchInput.tsx
- *
- * Controlled text input that debounces user keystrokes before writing the
- * search term to the URL's `search` query parameter.
- *
- * Why debounce instead of firing on every keystroke?
- * Each URL change triggers a full server re-render (new fetch to PokéAPI).
- * Debouncing at 300 ms means the URL only updates once the user pauses,
- * preventing a cascade of in-flight requests while they are still typing.
- *
- * URL-driven state:
- * The input is initialised from the current `search` URL param so that
- * hard-refreshing or sharing the URL preserves the search term.
- * Navigating forward/back in the browser also restores the correct value.
- *
- * Must be a Client Component ('use client') because it uses useSearchParams,
- * useRouter, useEffect, and useState — none of which are available on the
- * server. It must be wrapped in a Suspense boundary by its parent (FilterBar)
- * to prevent Next.js from bailing out of static prerendering.
- */
-
 "use client";
+
+// components/molecules/SearchInput.tsx
+// The search box in the filter bar.
+// As the user types, we wait 300ms before updating the URL — this prevents
+// firing a new server request on every single keystroke.
+// The search term lives in the URL so it survives page refresh and can be shared.
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-/**
- * Renders a styled search input with a 300 ms debounce.
- * On each debounce tick, syncs the current input value to the URL's
- * `search` param and resets the `page` param to avoid showing page 3
- * of results for a completely new search term.
- */
 export function SearchInput() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Initialise from the URL so hard-refresh preserves the search value
+  // Start with whatever is already in the URL so hard-refresh preserves the value
   const [value, setValue] = useState(searchParams.get("search") ?? "");
 
   useEffect(() => {
-    // Start a 300 ms timer; any new keystroke clears and restarts it
+    // Wait 300ms after the user stops typing before updating the URL
     const timer = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
       if (value.trim()) {
@@ -48,23 +26,20 @@ export function SearchInput() {
       } else {
         params.delete("search");
       }
-      // Reset to page 1 on new search — stale page numbers are confusing
+      // Reset to page 1 so a new search always starts from the beginning
       params.delete("page");
       const qs = params.toString();
       router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
     }, 300);
 
     return () => clearTimeout(timer);
-  // Intentionally omitting searchParams and router from deps — including them
-  // would cause the effect to re-fire on every navigation, creating a loop.
-  // The stable closure over pathname is sufficient because we read the latest
-  // searchParams inside the callback via a fresh URLSearchParams construction.
+  // We only want this to run when the input value changes.
+  // Including searchParams/router would cause it to re-fire on every navigation.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return (
     <div className="relative">
-      {/* sr-only label ensures the input has an accessible name in the DOM tree */}
       <label htmlFor="pokemon-search" className="sr-only">
         Search Pokémon
       </label>

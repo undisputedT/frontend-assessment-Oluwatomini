@@ -1,20 +1,6 @@
-/**
- * __tests__/lib/transformPokemon.test.ts
- *
- * Pure unit tests for the transformer functions and utility helpers.
- * No React rendering, no network calls — just plain function input/output.
- *
- * Covered:
- *   transformPokemonCard  — maps raw PokeAPIPokemon to the lean card shape
- *   transformPokemonDetail — extends card with stats, moves, baseExperience
- *   extractIdFromUrl       — parses numeric IDs out of PokéAPI URL strings
- *   buildSpriteUrl         — constructs the GitHub-hosted artwork URL
- *
- * Fixture:
- *   rawPokemon represents Charmander (id=4) with minimal but realistic data.
- *   Using a real Pokémon ID means assertions on image URLs can be specific
- *   rather than relying on pattern matching alone.
- */
+// __tests__/lib/transformPokemon.test.ts
+// Tests for the transformer functions and URL utilities.
+// These are pure functions with no React rendering — just input in, output out.
 
 import { describe, it, expect } from "vitest";
 import { transformPokemonCard, transformPokemonDetail } from "@/lib/transformers/transformPokemon";
@@ -22,11 +8,7 @@ import { extractIdFromUrl } from "@/lib/utils/extractIdFromUrl";
 import { buildSpriteUrl } from "@/lib/utils/buildSpriteUrl";
 import { PokeAPIPokemon } from "@/types/api";
 
-/**
- * Minimal PokeAPIPokemon fixture for Charmander.
- * Stats are limited to hp + attack (sufficient to test the mapper without
- * enumerating all 6 stats). Moves are limited to 2 (below the 10-move cap).
- */
+// Charmander (id=4) with minimal but realistic data
 const rawPokemon: PokeAPIPokemon = {
   id: 4,
   name: "charmander",

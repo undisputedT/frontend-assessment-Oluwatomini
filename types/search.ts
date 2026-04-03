@@ -1,21 +1,12 @@
-/**
- * types/search.ts
- *
- * Types related to the URL-driven search and filter state.
- *
- * The listing page uses URL search params as the single source of truth
- * for all filter state. This means filter state survives page refresh,
- * is shareable as a link, and is accessible to server components without
- * any client-side state management.
- */
+// types/search.ts
+// The typed version of what's in the URL when the user searches or filters.
+// We store filter state in the URL (not in React state) so the page can be
+// refreshed or shared and still show the same results.
 
-/**
- * The parsed and normalised form of the listing page's URL search params.
- * Raw params arrive as strings — this interface represents them after
- * validation and type coercion in app/page.tsx.
- */
+// What gets read from the URL and passed into the data fetcher.
+// All raw URL params are strings — these are the cleaned-up, typed versions.
 export interface FilterState {
-  search: string; // substring to match against Pokémon name; empty string = no search
-  type: string;   // Pokémon type to filter by (e.g. "fire"); empty string = all types
-  page: number;   // 1-indexed page number; always >= 1
+  search: string; // what the user typed in the search box; empty = no filter
+  type: string;   // selected type like "fire"; empty = all types
+  page: number;   // current page number, always 1 or higher
 }

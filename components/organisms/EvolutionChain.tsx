@@ -1,27 +1,13 @@
-/**
- * components/organisms/EvolutionChain.tsx
- *
- * Renders the evolution chain for a single Pokémon as a horizontal list of
- * sprite + name tiles linked to each stage's detail page.
- *
- * Data fetching:
- * This is an async Server Component — it owns its own data fetch via
- * getEvolutionChain(), which makes two sequential API calls (species → chain).
- * It is placed inside a Suspense boundary on the detail page so those fetches
- * are streamed without blocking the initial page paint. The detail page hero
- * (image, types, stats) renders immediately while the evolution section loads.
- *
- * Branching chains (e.g. Eevee → 8 evolutions) show only the first branch
- * because flattenEvolutionChain always follows evolves_to[0]. This is a
- * documented trade-off — full branching support would require a tree layout
- * component and substantially more complexity.
- *
- * Single-step chains (Pokémon with no evolutions) return null so no section
- * heading or empty container is rendered.
- *
- * EvolutionChainSkeleton is co-exported and used as the Suspense fallback
- * on the detail page to match the eventual section dimensions.
- */
+// components/organisms/EvolutionChain.tsx
+// Shows the evolution chain for a Pokémon — e.g. Bulbasaur → Ivysaur → Venusaur.
+// Each stage is a clickable card that takes you to that Pokémon's detail page.
+//
+// This is an async server component that fetches its own data.
+// On the detail page it's wrapped in a Suspense boundary, so it loads
+// after the rest of the page without blocking anything.
+//
+// For Pokémon with branching evolutions (like Eevee), we only show the first branch.
+// Pokémon with no evolutions return null, so the section is hidden entirely.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -31,15 +17,10 @@ interface EvolutionChainProps {
   pokemonId: number;
 }
 
-/**
- * Async Server Component that fetches and renders the evolution chain.
- * Returns null for Pokémon with no evolutions (single-step chains),
- * so the enclosing container on the detail page is hidden entirely.
- */
 export async function EvolutionChain({ pokemonId }: EvolutionChainProps) {
   const steps = await getEvolutionChain(pokemonId);
 
-  // No evolution chain to display — skip the entire section
+  // Single-stage Pokémon (no evolutions) — don't show the section at all
   if (steps.length <= 1) return null;
 
   return (
@@ -53,7 +34,7 @@ export async function EvolutionChain({ pokemonId }: EvolutionChainProps) {
       <ol className="flex flex-wrap items-center gap-2">
         {steps.map((step, i) => (
           <li key={step.id} className="flex items-center gap-2">
-            {/* Arrow separator between stages — hidden from assistive technology */}
+            {/* Arrow between stages — hidden from screen readers */}
             {i > 0 && (
               <span className="text-gray-400" aria-hidden="true">
                 →
@@ -61,7 +42,7 @@ export async function EvolutionChain({ pokemonId }: EvolutionChainProps) {
             )}
             <Link
               href={`/pokemon/${step.id}`}
-              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-3 transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-3 transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               aria-label={`View ${step.name}`}
             >
               <Image
@@ -82,11 +63,8 @@ export async function EvolutionChain({ pokemonId }: EvolutionChainProps) {
   );
 }
 
-/**
- * Skeleton placeholder shown by the Suspense boundary while getEvolutionChain
- * is in-flight. Three bars approximate a typical 3-stage chain so the layout
- * does not jump when the real content arrives.
- */
+// Shown while the evolution chain is loading.
+// Three placeholder blocks approximate a typical 3-stage chain.
 export function EvolutionChainSkeleton() {
   return (
     <div className="animate-pulse">

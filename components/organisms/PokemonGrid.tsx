@@ -1,21 +1,7 @@
-/**
- * components/organisms/PokemonGrid.tsx
- *
- * The main content area of the listing page. Renders the Pokémon as a
- * responsive CSS grid or, when the filtered result set is empty, an
- * inline empty-state message.
- *
- * The grid uses a <ul> (unordered list) of <li> items rather than a plain
- * <div> grid. This is semantically correct — the cards are a list of items —
- * and gives screen readers the item count automatically ("list, 20 items").
- *
- * LCP optimisation: the first 4 cards receive priority={true} which instructs
- * next/image to preload those images. On a standard desktop viewport the first
- * row holds 4 cards, so they are the likely Largest Contentful Paint candidates.
- *
- * EmptyState is co-located here because it is only ever used in this context.
- * Exporting it separately would expose an internal detail without adding value.
- */
+// components/organisms/PokemonGrid.tsx
+// Renders the grid of Pokémon cards, or an empty state message if nothing matched.
+// Uses a <ul> so screen readers automatically announce how many items are in the list.
+// The first 4 cards get priority image loading since they're visible straight away.
 
 import { PokemonCard as PokemonCardType } from "@/types/pokemon";
 import { PokemonCard } from "@/components/molecules/PokemonCard";
@@ -24,10 +10,7 @@ interface PokemonGridProps {
   pokemon: PokemonCardType[];
 }
 
-/**
- * Renders a centred empty-state message when no Pokémon match the current filter.
- * Prompts the user with actionable suggestions rather than just "no results".
- */
+// Shown when the search/filter returns no results
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -42,11 +25,6 @@ function EmptyState() {
   );
 }
 
-/**
- * Renders all matched Pokémon as a responsive grid.
- * Falls back to EmptyState when the array is empty.
- * The first 4 cards are marked priority for LCP optimisation.
- */
 export function PokemonGrid({ pokemon }: PokemonGridProps) {
   if (pokemon.length === 0) return <EmptyState />;
 
@@ -57,7 +35,7 @@ export function PokemonGrid({ pokemon }: PokemonGridProps) {
     >
       {pokemon.map((p, i) => (
         <li key={p.id}>
-          {/* First 4 cards are above-the-fold on most viewports — mark as priority for LCP */}
+          {/* First 4 are visible on load — tell the browser to load them immediately */}
           <PokemonCard pokemon={p} priority={i < 4} />
         </li>
       ))}

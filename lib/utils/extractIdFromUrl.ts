@@ -1,24 +1,12 @@
-/**
- * lib/utils/extractIdFromUrl.ts
- *
- * PokéAPI returns resource URLs like "https://pokeapi.co/api/v2/pokemon/42/"
- * rather than IDs directly in list responses. This utility extracts the
- * numeric ID from the end of any such URL, avoiding the need to make an
- * extra fetch just to get an ID we can construct from the URL itself.
- */
+// lib/utils/extractIdFromUrl.ts
+// The PokéAPI doesn't give us IDs directly in list responses — it gives us URLs.
+// This function pulls the number out of the end of a URL so we don't have to
+// make an extra network request just to get an ID.
+//
+// Example: "https://pokeapi.co/api/v2/pokemon/42/" → 42
 
-/**
- * Extracts the numeric ID from a PokéAPI resource URL.
- *
- * @example
- * extractIdFromUrl("https://pokeapi.co/api/v2/pokemon/42/") // → 42
- * extractIdFromUrl("https://pokeapi.co/api/v2/pokemon/100")  // → 100
- *
- * @throws if the URL doesn't end with a numeric segment — this signals
- *         an unexpected API shape change that needs investigation.
- */
 export function extractIdFromUrl(url: string): number {
-  // Match the last numeric segment, with an optional trailing slash
+  // Grab the last number in the URL, ignoring any trailing slash
   const match = url.match(/\/(\d+)\/?$/);
   if (!match) throw new Error(`Could not extract ID from URL: ${url}`);
   return parseInt(match[1], 10);

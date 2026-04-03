@@ -1,15 +1,6 @@
-/**
- * lib/api/pokeapi.ts
- *
- * All network calls to the PokéAPI live here — nowhere else in the codebase
- * calls fetch() directly. This single entry point means:
- *   - Cache strategies are visible in one file
- *   - Error handling is consistent
- *   - Swapping the data source only requires changes here
- *
- * Each exported function sets its own Next.js cache option based on
- * how frequently that data actually changes in the real world.
- */
+// lib/api/pokeapi.ts
+// All API calls to PokéAPI go through this file — nothing else in the app calls fetch() directly.
+// This keeps caching and error handling in one place.
 
 import {
   PokeAPIList,
@@ -25,13 +16,9 @@ import {
   REVALIDATE_TYPE,
 } from "./constants";
 
-/**
- * Internal fetch wrapper that adds consistent error handling.
- * The generic type parameter T tells TypeScript what shape to expect
- * from the JSON response — callers get a fully-typed return value.
- *
- * Throws if the HTTP status is not 2xx (e.g. 404, 500).
- */
+// Internal helper used by all the functions below.
+// Makes the fetch call and throws an error if the response wasn't successful.
+// The generic <T> tells TypeScript what shape to expect back from the JSON.
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
@@ -40,13 +27,9 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/**
- * Fetches one page of Pokémon from the paginated list endpoint.
- * Returns only name + URL per item — detail data requires individual fetches.
- *
- * Cache: revalidate every hour. New Pokémon are released infrequently;
- * a 1-hour stale window is acceptable and avoids hammering the API.
- */
+// Fetches one page of Pokémon from the list endpoint.
+// Only returns name + URL per item — we fetch full details separately.
+// Cached for 1 hour.
 export function fetchPokemonList(
   limit: number,
   offset: number
@@ -57,85 +40,59 @@ export function fetchPokemonList(
   );
 }
 
-/**
- * Fetches all ~1,350 Pokémon names in a single request.
- * Used server-side to power the name search filter.
- *
- * Cache: force-cache (permanent until next build).
- * The names list only changes when a new game adds new Pokémon, which
- * coincides with a new deployment. Fetching once per build saves ~96 KB
- * of repeated network traffic.
- */
+// Fetches all ~1,350 Pokémon names at once.
+// Used to power the search — we filter this list by name, then only fetch
+// full details for the ones that matched.
+// force-cache means it's fetched once per deployment and never re-fetched.
 export function fetchAllPokemonNames(): Promise<PokeAPIList> {
   return apiFetch<PokeAPIList>(`${POKEAPI_BASE}/pokemon?limit=1350`, {
     cache: "force-cache",
   });
 }
 
-/**
- * Fetches the full detail object for a single Pokémon by ID or name.
- * This is called for every card on the listing page (20 in parallel per page)
- * and for the detail page.
- *
- * Cache: revalidate every 24 hours. Individual Pokémon data is immutable
- * in practice — base stats and sprites don't change between games.
- * Next.js also deduplicates concurrent identical fetch calls within a
- * single render pass, so parallel calls to the same ID cost only one request.
- */
+// Fetches the full detail object for a single Pokémon by ID or name.
+// Called for every card on the listing page (20 at a time) and on the detail page.
+// Next.js automatically deduplicates identical calls within the same page render,
+// so fetching the same Pokémon twice only hits the network once.
+// Cached for 24 hours.
 export function fetchPokemon(idOrName: string | number): Promise<PokeAPIPokemon> {
   return apiFetch<PokeAPIPokemon>(`${POKEAPI_BASE}/pokemon/${idOrName}`, {
     next: { revalidate: REVALIDATE_DETAIL },
   });
 }
 
-/**
- * Fetches the list of all Pokémon types (fire, water, grass, etc.).
- * Used to populate the type filter dropdown.
- *
- * Cache: revalidate every 24 hours. There are 21 types and they have
- * been stable across multiple game generations.
- */
+// Fetches the list of all Pokémon types (fire, water, etc.).
+// Used to populate the type filter dropdown.
+// Cached for 24 hours — there are only 21 types and they rarely change.
 export function fetchTypes(): Promise<PokeAPIList> {
   return apiFetch<PokeAPIList>(`${POKEAPI_BASE}/type`, {
     next: { revalidate: REVALIDATE_TYPE },
   });
 }
 
-/**
- * Fetches all Pokémon belonging to a given type.
- * The response contains up to ~160 entries (water has the most).
- * We paginate client-side after fetching the full list since the API
- * doesn't support paginated type queries.
- *
- * Cache: revalidate every hour. Type memberships change occasionally
- * when new Pokémon are added in game updates.
- */
+// Fetches every Pokémon that belongs to a given type.
+// The API doesn't support pagination here, so we get the full list (up to ~160)
+// and do the slicing ourselves.
+// Cached for 1 hour.
 export function fetchPokemonByType(typeName: string): Promise<PokeAPITypeDetail> {
   return apiFetch<PokeAPITypeDetail>(`${POKEAPI_BASE}/type/${typeName}`, {
     next: { revalidate: REVALIDATE_LISTING },
   });
 }
 
-/**
- * Fetches species data for a Pokémon.
- * The species endpoint is a stepping stone — it contains the URL to the
- * evolution chain, which is on a completely separate endpoint.
- *
- * Cache: revalidate every 24 hours. Species data is immutable.
- */
+// Fetches species data for a Pokémon.
+// We need this because the evolution chain URL lives here — there's no direct
+// link to it from the main Pokémon endpoint.
+// Cached for 24 hours.
 export function fetchSpecies(id: number): Promise<PokeAPISpecies> {
   return apiFetch<PokeAPISpecies>(`${POKEAPI_BASE}/pokemon-species/${id}`, {
     next: { revalidate: REVALIDATE_DETAIL },
   });
 }
 
-/**
- * Fetches an evolution chain by its full URL (obtained from fetchSpecies).
- * The URL is used directly because the chain ID isn't derivable from the
- * Pokémon ID — every species must be looked up individually.
- *
- * Cache: revalidate every 24 hours. Evolution chains are fixed per species.
- */
+// Fetches an evolution chain using the full URL from fetchSpecies.
+// We pass the full URL because the chain ID can't be derived from the Pokémon ID.
+// Cached for 24 hours.
 export function fetchEvolutionChain(url: string): Promise<PokeAPIEvolutionChain> {
   return apiFetch<PokeAPIEvolutionChain>(url, {
     next: { revalidate: REVALIDATE_DETAIL },

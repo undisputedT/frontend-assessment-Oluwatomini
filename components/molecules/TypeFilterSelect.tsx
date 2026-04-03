@@ -1,36 +1,18 @@
-/**
- * components/molecules/TypeFilterSelect.tsx
- *
- * A styled dropdown for filtering the listing by Pokémon type.
- * Selecting a type immediately pushes the new value to the URL's `type`
- * query parameter, which triggers a server re-render with the filtered data.
- *
- * Styling approach:
- * The native <select> is reset with `appearance-none` to remove the OS-rendered
- * arrow, then a custom ▾ chevron is absolutely positioned to the right. This
- * keeps the semantics of a real <select> (keyboard navigation, screen reader
- * announcements, form submission) while giving us full visual control.
- *
- * Must be a Client Component ('use client') because it reads and writes URL
- * params via useSearchParams and useRouter. It must be wrapped in a Suspense
- * boundary by its parent (FilterBar) for the same reason as SearchInput.
- */
-
 "use client";
+
+// components/molecules/TypeFilterSelect.tsx
+// The type filter dropdown in the filter bar.
+// Selecting a type immediately updates the URL and triggers a new filtered fetch.
+//
+// We use a real <select> element for accessibility (keyboard navigation, screen readers)
+// but hide the native OS arrow with appearance-none and add our own ▾ icon instead.
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 interface TypeFilterSelectProps {
-  /** The list of available type names fetched server-side in app/page.tsx */
-  types: string[];
+  types: string[]; // the list of available types, fetched server-side in app/page.tsx
 }
 
-/**
- * Renders a styled type-filter dropdown.
- * On change, updates the `type` URL param (or removes it for "All types")
- * and resets `page` to 1 so the user always lands on the first page of
- * filtered results rather than an arbitrary page from a previous filter.
- */
 export function TypeFilterSelect({ types }: TypeFilterSelectProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -43,11 +25,9 @@ export function TypeFilterSelect({ types }: TypeFilterSelectProps) {
     if (e.target.value) {
       params.set("type", e.target.value);
     } else {
-      // Empty string means "All types" — remove the param for a clean URL
-      params.delete("type");
+      params.delete("type"); // "All types" selected — remove the param for a clean URL
     }
-    // Reset pagination when the filter changes
-    params.delete("page");
+    params.delete("page"); // reset to page 1 when the filter changes
     const qs = params.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   }
@@ -71,7 +51,7 @@ export function TypeFilterSelect({ types }: TypeFilterSelectProps) {
           </option>
         ))}
       </select>
-      {/* Custom chevron — replaces the native OS arrow removed by appearance-none */}
+      {/* Custom arrow — appearance-none removes the native OS dropdown arrow */}
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
         ▾
       </span>

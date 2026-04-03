@@ -1,37 +1,16 @@
-/**
- * __tests__/components/SearchInput.test.tsx
- *
- * Unit tests for the SearchInput component's debounce and URL-sync behaviour.
- *
- * Key testing decisions:
- *
- *   Fake timers (vi.useFakeTimers):
- *     The debounce is implemented with setTimeout(300). Fake timers let us
- *     advance time synchronously with vi.advanceTimersByTime(300) so we can
- *     assert on router.replace without actually waiting 300 ms per test.
- *
- *   fireEvent.change instead of userEvent.type:
- *     @testing-library/user-event v14 uses async internals (Promises + real
- *     timers) that conflict with vi.useFakeTimers(), causing 5-second timeouts.
- *     fireEvent.change fires the change event synchronously, which is sufficient
- *     for testing the value update and debounce timer.
- *
- *   next/navigation mock:
- *     useSearchParams, useRouter, and usePathname are stubbed to return
- *     controlled values. mockReplace captures calls to router.replace so
- *     we can assert on the URL it was called with.
- *
- *   act() around timer advancement:
- *     Advancing fake timers triggers the setTimeout callback which calls
- *     setState (via router.replace → re-render). Wrapping in act() flushes
- *     those React state updates synchronously so assertions see the final state.
- */
+// __tests__/components/SearchInput.test.tsx
+// Tests for the SearchInput component.
+// Main things to check: the debounce works, the URL gets updated correctly,
+// and clearing the input removes the search param.
+//
+// We use fake timers (vi.useFakeTimers) so we can skip the 300ms wait.
+// We use fireEvent.change instead of userEvent.type because userEvent v14
+// has async internals that don't work well with fake timers.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { SearchInput } from "@/components/molecules/SearchInput";
 
-/** Captures all calls to router.replace for assertion */
 const mockReplace = vi.fn();
 
 vi.mock("next/navigation", () => ({
@@ -43,7 +22,6 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
-/** Helper — fires a change event on the input without the userEvent async overhead */
 function typeIntoInput(input: HTMLElement, value: string) {
   fireEvent.change(input, { target: { value } });
 }
